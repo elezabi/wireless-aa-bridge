@@ -1,6 +1,16 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+// Release signing is read from keystore.properties (gitignored, absent on fresh clones).
+// Without the file the release build is simply unsigned, so a clone still builds.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) FileInputStream(keystorePropsFile).use { load(it) }
 }
 
 android {
@@ -12,14 +22,28 @@ android {
         minSdk = 29
         targetSdk = 30
         versionCode = 1
-        versionName = "1.0.0-stage1"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropsFile.exists()) {
+                storeFile = file(keystoreProps.getProperty("storeFile")!!)
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (keystorePropsFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             isDebuggable = true
@@ -39,6 +63,12 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    lint {
+        // Play Store requires targetSdk >= 33; this app is side-loaded onto a specific
+        // Android 10 device, so that requirement does not apply here.
+        disable += "ExpiredTargetSdkVersion"
+    }
 }
 
 dependencies {
@@ -48,9 +78,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-ktx:1.8.2")
-
-    // USB host/accessory support
-    // Uses Android framework USB APIs directly
 
     // QR code for the hotspot credentials (client phone scans it to join without typing)
     implementation("com.google.zxing:core:3.5.3")
