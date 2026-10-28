@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FF1E88E5</color>
+    <color name="design_default_color_background">#FFFFFFFF</color>
+    <color name="design_default_color_primary">#FF1E88E5</color>
+    <color name="design_default_color_primary_dark">#FF1565C0</color>
+    <color name="design_default_color_primary_variant">#FF1565C0</color>
+    <color name="design_default_color_on_primary">#FFFFFFFF</color>
+    <color name="design_default_color_secondary">#FF03DAC5</color>
+    <color name="design_default_color_secondary_variant">#FF018786</color>
+    <color name="design_default_color_on_secondary">#FF000000</color>
+    <color name="design_default_color_error">#FFB00020</color>
+    <color name="design_default_color_on_error">#FFFFFFFF</color>
+    <color name="design_default_color_surface">#FFFFFFFF</color>
+    <color name="design_default_color_on_surface">#FF000000</color>
+    <color name="accent">#FF1E88E5</color>
+    <color name="black">#FF000000</color>
+    <color name="blue">#FF1E88E5</color>
+    <color name="bg_dark">#FF121212</color>
+    <color name="bg_card">#FF1E1E1E</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FFB0B0B0</color>
+    <color name="amber">#FFFFB300</color>
+    <color name="green">#FF4CAF50</color>
+    <color name="red">#FFF44336</color>
+    <color name="gray_dark">#FF757575</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

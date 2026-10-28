@@ -1,0 +1,24 @@
+# Gradle / build output
+.gradle/
+build/
+app/build/
+captures/
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Signing material and certs — NEVER commit private keys
+keystore/
+*.p12
+*.pem
+*.key
+*.jks
+*.keystore
+*.csr
+
+# Logs / profiling
+*.log
+*.hprof

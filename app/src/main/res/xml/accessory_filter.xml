@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        USB Accessory filter for Android Auto dongle mode.
+        The car (USB host) sends an AOA request with these strings.
+        We match on the standard Android Open Accessory strings that the car sends.
+        VID: 0x18D1 (Google), PID: 0x2D00 (Accessory) or 0x2D01 (Accessory + ADB)
+    -->
+    <usb-accessory
+        manufacturer="Google"
+        model="Android Auto"
+        version="1.0" />
+    <usb-accessory
+        manufacturer="Android"
+        model="Android Auto"
+        version="1.0" />
+    <usb-accessory
+        manufacturer="Car"
+        model="Android Auto"
+        version="1.0" />
+</resources>

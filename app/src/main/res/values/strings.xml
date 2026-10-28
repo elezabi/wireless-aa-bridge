@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Wireless AA Bridge</string>
+
+    <!-- Status card labels -->
+    <string name="label_car">CAR (USB)</string>
+    <string name="label_bt">PHONE (BT)</string>
+    <string name="label_wifi">PHONE (WiFi)</string>
+    <string name="label_relay">RELAY</string>
+    <string name="label_clients">CLIENTS</string>
+
+    <!-- Values -->
+    <string name="value_none">—</string>
+    <string name="value_waiting">waiting</string>
+    <string name="value_off">off</string>
+    <string name="value_idle">idle</string>
+    <string name="value_open">open</string>
+    <string name="value_held">held</string>
+    <string name="value_running">running</string>
+    <string name="value_connected">connected</string>
+
+    <string name="pill_running">RUNNING</string>
+    <string name="pill_stopped">STOPPED</string>
+    <string name="pill_relaying">RELAYING</string>
+
+    <string name="clients_empty">No clients yet</string>
+    <string name="qr_description">WiFi credentials QR code</string>
+
+    <!-- Buttons -->
+    <string name="btn_start_bridge">START BRIDGE</string>
+    <string name="btn_stop_bridge">STOP BRIDGE</string>
+    <string name="btn_export_logs">EXPORT</string>
+    <string name="btn_clear_logs">CLEAR</string>
+
+    <string name="log_empty">Bridge not started.</string>
+    <string name="export_success">Logs exported to %s</string>
+    <string name="export_failed">Export failed: %s</string>
+    <string name="permission_storage_rationale">Storage permission needed to export log files</string>
+</resources>
