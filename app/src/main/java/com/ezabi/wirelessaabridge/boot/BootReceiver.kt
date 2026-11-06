@@ -18,15 +18,9 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
         if (action != Intent.ACTION_BOOT_COMPLETED && action != "android.intent.action.QUICKBOOT_POWERON") return
-        Log.i("WAAB/Boot", "Boot completed ($action) — launching bridge activity")
-        // Android 10 blocks activity starts from a boot broadcast
-        // (ActivityTaskManager: Background activity start ... isBgStartWhitelisted: false),
-        // so the bridge is owned by a foreground service instead. The notification it posts
-        // opens the UI when wanted.
-        try {
-            BridgeService.start(context)
-        } catch (e: Exception) {
-            Log.w("WAAB/Boot", "Could not start bridge service: ${e.javaClass.simpleName}: ${e.message}")
-        }
+        Log.i("WAAB/Boot", "Boot completed ($action) — bridge will start when USB accessory attaches")
+        // The app is launched by the USB accessory attach intent; no background
+        // service is started here so the phone can stay in deep sleep until the
+        // car powers on and the accessory enumerates.
     }
 }

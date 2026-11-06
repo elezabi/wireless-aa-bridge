@@ -33,7 +33,7 @@ class BridgeService : Service() {
         if (!bridge.isRunning()) {
             bridge.start()
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun buildNotification(): Notification {
@@ -65,6 +65,11 @@ class BridgeService : Service() {
             .build()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
     companion object {
         private const val CHANNEL_ID = "waab_bridge"
         private const val NOTIF_ID = 41
@@ -76,6 +81,10 @@ class BridgeService : Service() {
             } else {
                 context.startService(i)
             }
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, BridgeService::class.java))
         }
     }
 }

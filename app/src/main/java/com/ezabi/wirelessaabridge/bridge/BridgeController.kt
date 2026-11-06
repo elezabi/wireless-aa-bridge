@@ -364,15 +364,21 @@ class BridgeController(private val context: Context) {
     private fun forceCarBluetoothClass() {
         val adapter = try { BluetoothAdapter.getDefaultAdapter() } catch (e: Exception) { null } ?: return
         try {
-            // BluetoothClass(int) is package-private; build one by reflection, then call the
-            // @hide setBluetoothClass(BluetoothClass). Samsung ignores the
-            // bluetooth_class_of_device setting, so reflection is the only route.
-            val ctor = BluetoothClass::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType)
-            ctor.isAccessible = true
-            val target = ctor.newInstance(0x200414)
+            // Try the modern reflection approach first (Android 10+)
             val m = BluetoothAdapter::class.java.getDeclaredMethod("setBluetoothClass", BluetoothClass::class.java)
             m.isAccessible = true
-            val ok = m.invoke(adapter, target)
+            // Use the static factory if available, otherwise fall back to constructor
+            val targetClass: BluetoothClass = try {
+                val ctor = BluetoothClass::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType)
+                ctor.isAccessible = true
+                ctor.newInstance(0x200414)
+            } catch (e: Exception) {
+                // Fallback: use reflection to get the CLASS_HANDSFREE constant
+                val field = BluetoothClass::class.java.getDeclaredField("CLASS_HANDSFREE")
+                field.isAccessible = true
+                field.get(null) as BluetoothClass
+            }
+            val ok = m.invoke(adapter, targetClass)
             log.i(TAG, "Set Bluetooth class to hands-free car kit via reflection (result=$ok)")
         } catch (e: Exception) {
             log.w(TAG, "setBluetoothClass reflection failed: ${e.message}")

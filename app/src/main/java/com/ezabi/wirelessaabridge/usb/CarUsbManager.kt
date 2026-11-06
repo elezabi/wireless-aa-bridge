@@ -43,7 +43,7 @@ class CarUsbManager(private val activity: Activity) {
     private val SYNTHETIC_VERSION_RESPONSE = byteArrayOf(
         0x00, 0x03, 0x00, 0x08, 0x00, 0x02, 0x00, 0x01, 0x00, 0x07, 0x00, 0x00
     )
-    private val SYNTHETIC_FALLBACK_MS = 14_000L
+    private val SYNTHETIC_FALLBACK_MS = 60_000L
     @Volatile var syntheticResponseSent: Boolean = false
         private set
     @Volatile private var syntheticPending: Boolean = false
@@ -293,14 +293,21 @@ class CarUsbManager(private val activity: Activity) {
                 log.d(TAG, "Read ${bytesRead} bytes: ${bytesToHex(data)}")
                 // The head unit writes its opening frame (the version request) once. Answer
                 // it only when the phone is on TCP (sendSyntheticResponse, from the relay
-                // path) or on the fallback timer — answering immediately would make the car
-                // send its ClientHello before the phone arrives and abandon the TLS handshake.
+                // path) — answering immediately would make the car send its ClientHello
+                // before the phone arrives and abandon the TLS handshake. The fallback
+                // timer is now a very long 60s; we strongly prefer the relay path to
+                // trigger the response so the phone is ready.
                 if (!phoneAttached && !syntheticResponseSent && !syntheticPending) {
                     if (isVersionRequest(data)) {
                         syntheticPending = true
                         Thread({
                             Thread.sleep(SYNTHETIC_FALLBACK_MS)
-                            sendSyntheticResponse()
+                            if (!phoneAttached && !syntheticResponseSent) {
+                                log.w(TAG, "Fallback timer fired — no phone on TCP after ${SYNTHETIC_FALLBACK_MS/1000}s. Sending synthetic VERSION_RESPONSE anyway.")
+                                sendSyntheticResponse()
+                            } else {
+                                syntheticPending = false
+                            }
                         }, "SyntheticVersionFallback").apply { isDaemon = true; start() }
                     }
                 }

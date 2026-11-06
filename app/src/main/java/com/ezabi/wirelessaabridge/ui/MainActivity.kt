@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     // made a client with Bluetooth switched off look identical to one that never arrived.
     private var btSeenThisRun = false
     private var wifiSeenThisRun = false
+    private var discoverableRequested = false
 
     private var tickCount = 0L
     private val uiTick = object : Runnable {
@@ -150,6 +151,9 @@ class MainActivity : AppCompatActivity() {
         usbManager.onAccessoryDetached = {
             bridge.onCarDetached()
             runOnUiThread { appendLog("Car accessory detached") }
+            try { com.ezabi.wirelessaabridge.boot.BridgeService.stop(this) } catch (_: Exception) {}
+            // Do NOT finish the activity — keep it alive so the next attach
+            // reuses the same process without a visible restart.
         }
 
         usbManager.onAccessoryStrings = { strings ->
@@ -408,7 +412,14 @@ class MainActivity : AppCompatActivity() {
             appendLog("Already discoverable")
             return
         }
+        // Only prompt once per app session. The 3600s (1 hour) duration covers
+        // multiple car trips; we don't want the dialog every time.
+        if (discoverableRequested) {
+            appendLog("Discoverable already requested this session")
+            return
+        }
         try {
+            discoverableRequested = true
             startActivity(
                 android.content.Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
                     putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 3600)
