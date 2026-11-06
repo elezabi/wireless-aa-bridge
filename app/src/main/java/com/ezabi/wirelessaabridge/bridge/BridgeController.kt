@@ -212,9 +212,7 @@ class BridgeController(private val context: Context) {
 
     /** Called when the accessory detaches: the next attach must be able to dial again. */
     fun onCarDetached() {
-        hfp.resetOutbound()
-        // A desk-test leftover (loopback fake phone) or a stale phone must never hold the
-        // slot across a detach: it would make the next car attach relay to a dead peer.
+        // No outbound dialler to reset anymore — the phone connects via WPP inbound.
         relay.stop()
         try { pendingPhone?.close() } catch (_: Exception) {}
         pendingPhone = null
@@ -232,10 +230,9 @@ class BridgeController(private val context: Context) {
 
         if (deskMode) {
             desk.start()
-            // Desk mode has no USB attach, so nothing would trigger onCarReady; dial the
-            // phone here so the harness runs unattended, exactly as the car would.
-            log.i(TAG, "Desk mode — dialling the paired phone")
-            hfp.connectToPairedAg()
+            // Desk mode has no USB attach, so nothing would trigger onCarReady; the fake
+            // phone connects via WPP RFCOMM inbound, no outbound dial needed.
+            log.i(TAG, "Desk mode — waiting for phone via WPP RFCOMM")
         }
         rfcomm.onConnection = { sock -> handlePhone(sock) }
         rfcomm.onError = { msg -> log.e(TAG, "RFCOMM: $msg"); onState?.invoke("RFCOMM: $msg") }
@@ -328,16 +325,11 @@ class BridgeController(private val context: Context) {
             desk.stop()
             log.w(TAG, "Desk mode auto-disabled — a real car accessory attached")
         }
-        // A desk session leaves a dialler (and possibly a relay) alive. The next real attach
-        // must be able to start from a clean slate.
-        hfp.resetOutbound()
-        relay.stop()
-        // The bridge IS the head unit to the client phone. It dials the phone's handsfree to
-        // wake Android Auto, then serves it WiFi credentials (WPP) and the TCP relay, so the
-        // client negotiates AAP with the bridge and the bridge proxies it to the car over USB
-        // as a cable-connected phone. Without the dial the phone only connects late/inbound.
-        log.i(TAG, "Car present — ringing the paired phone (bridge is the head unit)")
-        hfp.connectToPairedAg()
+        // The bridge IS the head unit to the client phone. The phone connects via WPP
+        // RFCOMM inbound (UUID 4de17a00-52cb-11e6-bdf4-0800200c9a66), receives Wi-Fi
+        // credentials, joins the Wi-Fi Direct AP, and opens the TCP AAP relay.
+        // No outbound HFP dial is needed — the phone initiates the connection.
+        log.i(TAG, "Car present — waiting for phone via WPP RFCOMM")
         // The Denso head unit also demands a handsfree link to the device it sees over USB.
         // Force the S9's own BluetoothHeadset (AG) to connect to the car now, instead of
         // waiting for Android's auto-connect — measured: the native connect only landed after

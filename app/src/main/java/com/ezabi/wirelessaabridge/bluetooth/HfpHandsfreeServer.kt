@@ -8,6 +8,7 @@ import com.ezabi.wirelessaabridge.logging.LogManager
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 /**
@@ -80,78 +81,18 @@ class HfpHandsfreeServer(private val context: Context) {
      * connection itself (BluetoothHandler::connectWithRetry), and the car's patience is
      * only 21-105 s, so waiting for the phone to poll can never work.
      */
+    /** @deprecated Outbound HFP to the phone is not used — the phone connects via WPP inbound. */
+    @Deprecated("Outbound HFP to phone removed; phone connects via WPP RFCOMM inbound", ReplaceWith(""))
     fun connectToPairedAg(maxAttempts: Int = 40, gapMs: Long = 7_000) {
-        if (outboundActive) {
-            log.i(TAG, "Outbound HFP: dialler already running — not starting another")
-            return
-        }
-        outboundActive = true
-        val gen = outboundGen
-        Thread({
-          try {
-            // Cold start ordering: the accessory is opened the instant it attaches, but the
-            // bridge (and therefore this HFP server) starts ~1.2 s later. Return here and
-            // the dialler dies before Bluetooth is up, so wait for the server first.
-            var waited = 0L
-            while (!running && waited < 30_000) {
-                Thread.sleep(500)
-                waited += 500
-            }
-            if (!running) {
-                log.w(TAG, "Outbound HFP: HFP server never started — not dialling")
-                return@Thread
-            }
-            val adapter = try { BluetoothAdapter.getDefaultAdapter() } catch (e: Exception) { null }
-            if (adapter == null) { log.w(TAG, "Outbound HFP: no Bluetooth adapter"); return@Thread }
-            for (attempt in 1..maxAttempts) {
-                if (!running || gen != outboundGen) return@Thread
-                val bonded = try { adapter.bondedDevices } catch (e: SecurityException) { null }
-                if (bonded.isNullOrEmpty()) {
-                    log.w(TAG, "Outbound HFP: no bonded devices")
-                } else {
-                    for (dev in bonded) {
-                        if (!running || gen != outboundGen) return@Thread
-                        val name = safeName(dev.name)
-                        // The S9+ is also bonded to the car itself (Toyota Touch). Never
-                        // ring the car's own AG.
-                        if (name.contains("toyota", ignoreCase = true)) continue
-                        try {
-                            if (attempt == 1 || attempt % 5 == 0) {
-                                log.i(TAG, "Outbound HFP: dialling ${dev.address} ($name) attempt $attempt/$maxAttempts")
-                            }
-                            val socket = dev.createRfcommSocketToServiceRecord(UUID_AG)
-                            socket.connect()
-                            log.i(TAG, "Outbound HFP: connected to ${dev.address} — running HF session")
-                            runSession(socket, dev.address)
-                            return@Thread
-                        } catch (e: Exception) {
-                            // Expected while the phone's Bluetooth is off: keep dialling,
-                            // the client may come back at any time inside the car's patience.
-                            if (attempt == 1 || attempt % 5 == 0) {
-                                log.w(TAG, "Outbound HFP to ${dev.address} failed: ${e.javaClass.simpleName}: ${e.message}")
-                            }
-                        }
-                    }
-                }
-                if (attempt < maxAttempts) Thread.sleep(gapMs)
-            }
-            log.i(TAG, "Outbound HFP: gave up after $maxAttempts attempts")
-          } finally {
-            // Always release the guard, or one early exit disables dialling forever.
-            outboundActive = false
-          }
-        }, "HfOutbound").apply { isDaemon = true; start() }
+        log.w(TAG, "connectToPairedAg() called but outbound HFP to phone is disabled — phone connects via WPP")
     }
 
-    /**
-     * Release the dialler so the next accessory attach can dial again. Without this a single
-     * 40-attempt dialler (about 4.7 minutes) starved every later attach — measured: the
-     * replug at 13:55:50 did nothing but log "dialler already running".
-     */
+    /** @deprecated No outbound dialler to reset. */
+    @Deprecated("Outbound HFP to phone removed; no dialler to reset")
     fun resetOutbound() {
         outboundGen++
         outboundActive = false
-        log.i(TAG, "Outbound HFP: dialler reset — the next attach will dial again")
+        log.i(TAG, "resetOutbound() called but outbound HFP is disabled")
     }
 
     private fun listen(adapter: BluetoothAdapter, uuid: UUID, name: String): Boolean {
@@ -201,7 +142,7 @@ class HfpHandsfreeServer(private val context: Context) {
             val out: OutputStream = socket.outputStream
 
             fun send(cmd: String) {
-                out.write((cmd + "\r").toByteArray(Charsets.US_ASCII))
+                out.write((cmd + "\r").toByteArray(StandardCharsets.US_ASCII))
                 out.flush()
                 log.i(TAG, "HF->AG[$addr]: $cmd")
             }
@@ -218,7 +159,7 @@ class HfpHandsfreeServer(private val context: Context) {
                     log.i(TAG, "AG[$addr] closed the socket")
                     break
                 }
-                sb.append(String(buf, 0, n, Charsets.US_ASCII))
+                sb.append(String(buf, 0, n, StandardCharsets.US_ASCII))
                 while (true) {
                     val cr = sb.indexOf("\r")
                     val lf = sb.indexOf("\n")
@@ -243,7 +184,7 @@ class HfpHandsfreeServer(private val context: Context) {
                         }
                     } else if (line.uppercase().startsWith("AT")) {
                         // AG-initiated command (CLIP, VGS, CHLD, ...)
-                        out.write(handle(line).toByteArray(Charsets.US_ASCII))
+                        out.write(handle(line).toByteArray(StandardCharsets.US_ASCII))
                         out.flush()
                     }
                 }
